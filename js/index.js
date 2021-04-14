@@ -1,12 +1,23 @@
 let page = 1;
 const URL_PREFIX='http://localhost:3000/'
+const monstrPARAMS = `${URL_PREFIX}/?_limit=50&_page=`;
 
+//Init page buttons on page load when clicked
+document.addEventListener('DOMContentLoaded', () => {
+   // getMonsters(`${monstrPARAMS}${page}`);
+    buttonsInit();
+//document.getElementById('create-monster').append(buildForm())
 
+});
+
+//Fetch monsters from the server
 const getMonsters = (a) => {
-    fetch (URL_PREFIX + `monsters/?_limit=50&_pages=${a}`)
+    const container = document.querySelector('#monster-container')
+    container.innerHTML=''
+    fetch (URL_PREFIX + `monsters/?_limit=5&_pages=${a}`)
     .then(resp => resp.json())
     .then (newMonster => {
-        //console.log(data)
+        console.log(newMonster)
         newMonster.forEach(monster => {
             buildMonster(monster)})
     })
@@ -38,11 +49,36 @@ const buildForm = () => {
    submit.setAttribute('type', 'submit')
    submit.setAttribute('value', 'Submit')
 
+   //append form to the page
    form.append(name, age, description, submit)
-
    container.appendChild(form)
+
+   //add addEventListener to the form
+   form.addEventListener('submit', e => {
+       e.preventDefault(),
+       submitMonster(e) //handle func for submit button
+   })
 }
 buildForm()
+
+
+const submitMonster = (e) =>{
+    const { name, age, description } = e.target
+    fetch ( 'http://localhost:3000/monsters', {
+        method: 'POST', 
+        headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        },
+        body: JSON.stringify({
+            name: name.value,
+            age: age.value,
+            description: description.value
+        })
+    })
+    .then(resp => resp.json())
+    .then(addMonster => buildMonster(addMonster))
+}
 
 //Display data on the page
 buildMonster = (monster) => {
@@ -53,21 +89,31 @@ buildMonster = (monster) => {
     let p = document.createElement('p')
 
     h2.textContent = monster.name
-    h3.textContent = `Age: ${monster.age}`
+    h3.textContent = `Age: ${parseInt(monster.age)}`
     p.textContent = monster.description
 
     div.append(h2, h3, p)
-
 }
 
-// const handleAddMonster = (monsterObj) =>{
-//     fetch ( 'http://localhost:3000/monsters', {
-//         method: 'POST', 
-//         headers: {
-//             "Content-Type": "application/json",
-//             Accept: "application/json"
-//         },
-//         body: JSON.stringify({
-            
-//         })
-//     })
+//Add addEventListener on the page buttons that loads the next list of monsters
+function buttonsInit() {
+    const back = document.getElementById('back');
+    const forward = document.getElementById('forward');
+    back.addEventListener('click', () => {
+        if (page <= 1) {
+            return '';
+        } else {
+            page -= 1;
+            getMonsters(`${monstrPARAMS}${page}`);
+        }
+    });
+    forward.addEventListener('click', () => {
+        const container = document.getElementById('monster-container');
+        if (container.textContent.length > 0) {
+            page += 1;
+            getMonsters(`${monstrPARAMS}${page}`);
+        } else {
+            return '';
+        }
+    });
+};
